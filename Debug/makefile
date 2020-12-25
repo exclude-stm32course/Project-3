@@ -28,34 +28,34 @@ endif
 
 -include ../makefile.defs
 
-BUILD_ARTIFACT_NAME := Project-3
+BUILD_ARTIFACT_NAME := UART
 BUILD_ARTIFACT_EXTENSION := elf
 BUILD_ARTIFACT_PREFIX := 
 BUILD_ARTIFACT := $(BUILD_ARTIFACT_PREFIX)$(BUILD_ARTIFACT_NAME).$(BUILD_ARTIFACT_EXTENSION)
 
 # Add inputs and outputs from these tool invocations to the build variables 
 EXECUTABLES += \
-Project-3.elf \
+UART.elf \
 
 SIZE_OUTPUT += \
 default.size.stdout \
 
 OBJDUMP_LIST += \
-Project-3.list \
+UART.list \
 
 OBJCOPY_BIN += \
-Project-3.bin \
+UART.bin \
 
 
 # All Target
 all: main-build
 
 # Main-build Target
-main-build: Project-3.elf secondary-outputs
+main-build: UART.elf secondary-outputs
 
 # Tool invocations
-Project-3.elf: $(OBJS) $(USER_OBJS) /home/johan/STM32CubeIDE/workspace_1.5.0/Project-3/STM32F103C8TX_FLASH.ld
-	arm-none-eabi-gcc -o "Project-3.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"/home/johan/STM32CubeIDE/workspace_1.5.0/Project-3/STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Project-3.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+UART.elf: $(OBJS) $(USER_OBJS) /home/evsejho/STM32CubeIDE/workspace_1.5.0/UART/STM32F103C8TX_FLASH.ld
+	arm-none-eabi-gcc -o "UART.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m3 -T"/home/evsejho/STM32CubeIDE/workspace_1.5.0/UART/STM32F103C8TX_FLASH.ld" --specs=nosys.specs -Wl,-Map="UART.map" -Wl,--gc-sections -static --specs=nano.specs -mfloat-abi=soft -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -64,13 +64,13 @@ default.size.stdout: $(EXECUTABLES)
 	@echo 'Finished building: $@'
 	@echo ' '
 
-Project-3.list: $(EXECUTABLES)
-	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "Project-3.list"
+UART.list: $(EXECUTABLES)
+	arm-none-eabi-objdump -h -S $(EXECUTABLES) > "UART.list"
 	@echo 'Finished building: $@'
 	@echo ' '
 
-Project-3.bin: $(EXECUTABLES)
-	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "Project-3.bin"
+UART.bin: $(EXECUTABLES)
+	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "UART.bin"
 	@echo 'Finished building: $@'
 	@echo ' '
 

@@ -1,0 +1,4 @@
+debug.c:11:14:get_arg	24	static
+debug.c:22:5:get_args	56	static
+debug.c:82:6:free_args	24	static
+debug.c:93:6:output	292	static

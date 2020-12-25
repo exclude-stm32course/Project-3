@@ -20,25 +20,18 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 
+
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <sys/types.h>
+#include <string.h>
+#include "debug.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
-#define ENABLE_UART HAL_UART_Receive_IT(uart_comm.huart, uart_comm.message, 1)
-
 /* USER CODE BEGIN PTD */
-#define MAX_MSG_SZ 50
-struct uart_comm {
-	UART_HandleTypeDef *huart;
-	uint8_t message[MAX_MSG_SZ];
-	uint8_t buffer[2];
-	int pos;
 
-};
-
-struct uart_comm uart_comm;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -51,7 +44,7 @@ struct uart_comm uart_comm;
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-UART_HandleTypeDef huart1;
+UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 
@@ -60,20 +53,72 @@ UART_HandleTypeDef huart1;
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
-static void MX_USART1_UART_Init(void);
+static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+int recv = 0;
+uint8_t recv_buf[2];
 
+#define BUFFER_SZ 255
+#define MAX_TEXT 10
+#define MAX_HELP_TEXT 40
+
+int  buf_pos;
+uint8_t buffer[BUFFER_SZ] = {0,};
+
+struct help_text {
+	char input[MAX_TEXT];
+	void (*func)(char **argv, int argc);
+};
+
+
+
+static void help(char **argv, int argc) {
+	char help_str[] = "You need help mate?!";
+	output(&huart2, help_str);
+}
+
+static void run(char **argv, int argc) {
+
+}
+
+struct help_text helper[] =  {
+	{.input = "help", .func = help },
+	{.input = "run",  .func = run  }
+};
+int help_sz = sizeof(helper) / sizeof(helper[0]);
+
+static void check_text() {
+	char **argv;
+	int argc;
+	int ret;
+	ret = get_args((char *)buffer, &argv, &argc);
+	if(ret || argc < 1) goto end;
+
+	struct help_text *help_text = helper;
+	for(int i = 0 ; i < help_sz ; ++i) {
+		if(0 == strcmp(argv[0], help_text->input)) {
+			help_text->func(argv, argc);
+			break;
+		}
+		++help_text;
+	}
+	buf_pos = 0;
+end:
+	free_args(argv, argc);
+}
 /* USER CODE END 0 */
 
 /**
   * @brief  The application entry point.
   * @retval int
   */
+
+
 int main(void)
 {
   /* USER CODE BEGIN 1 */
@@ -98,27 +143,37 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USART1_UART_Init();
+  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-
-  /* initialize uart_comm; */
-  uart_comm.huart = &huart1;
-  uart_comm.pos = 0;
-  uint8_t  *msg_ptr = uart_comm.message;
-  for(int i = 0; i < MAX_MSG_SZ; ++i){
-	  *msg_ptr = 0;
-	  msg_ptr++;
-
-  }
-
-  ENABLE_UART;
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
+  recv = 0;
+  buf_pos = 0;
+
+  HAL_UART_Receive_IT(&huart2, recv_buf, 1);
+
   while (1)
   {
+	  if(recv) {
+		  recv = 0;
+		  if(recv_buf[0] == '\r' || buf_pos >= BUFFER_SZ) {
+			  recv_buf[1] = '\n';
+			  HAL_UART_Transmit(&huart2, recv_buf, 2, 500);
+
+			  buffer[buf_pos] = 0;
+
+			  check_text();
+			  continue;
+		  }
+
+		  buffer[buf_pos++] = recv_buf[0];
+		  HAL_UART_Transmit(&huart2, recv_buf, 1, 500);
+	  }
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -144,7 +199,7 @@ void SystemClock_Config(void)
   RCC_OscInitStruct.HSIState = RCC_HSI_ON;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL8;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -165,35 +220,35 @@ void SystemClock_Config(void)
 }
 
 /**
-  * @brief USART1 Initialization Function
+  * @brief USART2 Initialization Function
   * @param None
   * @retval None
   */
-static void MX_USART1_UART_Init(void)
+static void MX_USART2_UART_Init(void)
 {
 
-  /* USER CODE BEGIN USART1_Init 0 */
+  /* USER CODE BEGIN USART2_Init 0 */
 
-  /* USER CODE END USART1_Init 0 */
+  /* USER CODE END USART2_Init 0 */
 
-  /* USER CODE BEGIN USART1_Init 1 */
+  /* USER CODE BEGIN USART2_Init 1 */
 
-  /* USER CODE END USART1_Init 1 */
-  huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
-  huart1.Init.WordLength = UART_WORDLENGTH_8B;
-  huart1.Init.StopBits = UART_STOPBITS_1;
-  huart1.Init.Parity = UART_PARITY_NONE;
-  huart1.Init.Mode = UART_MODE_TX_RX;
-  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
-  if (HAL_UART_Init(&huart1) != HAL_OK)
+  /* USER CODE END USART2_Init 1 */
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 115200;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart2) != HAL_OK)
   {
     Error_Handler();
   }
-  /* USER CODE BEGIN USART1_Init 2 */
+  /* USER CODE BEGIN USART2_Init 2 */
 
-  /* USER CODE END USART1_Init 2 */
+  /* USER CODE END USART2_Init 2 */
 
 }
 
@@ -214,19 +269,9 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	if(huart != &huart1) return;
-
-	if('\n' == *huart->pRxBuffPtr){
-		/* Now we need to i*/
-	} else {
-		uart_comm.message[uart_comm.pos++] = *huart->pRxBuffPtr;
-	}
-
-	ENABLE_UART;
-
+	recv = 1;
+	HAL_UART_Receive_IT(&huart2, recv_buf, 1);
 }
-
-
 /* USER CODE END 4 */
 
 /**
