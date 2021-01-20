@@ -12,7 +12,7 @@ static char *get_arg(const char *text, const int length)
 {
 
 	char *new_text = (char*)malloc(sizeof(char)*(length+1));
-	if(!*new_text) return NULL;
+	if(!new_text) return NULL;
 	memcpy(new_text, text, length);
 	new_text[length] = 0;
 	return new_text;
