@@ -107,3 +107,4 @@ void output(UART_HandleTypeDef *huart, const char *fmt, ...)
 	HAL_UART_Transmit(huart, (uint8_t*)buffer, len, 500);
 	va_end (args);
 }
+

@@ -6,7 +6,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
+  * <h2><center>&copy; Copyright (c) 2021 STMicroelectronics.
   * All rights reserved.</center></h2>
   *
   * This software component is licensed by ST under BSD 3-Clause license,
@@ -19,8 +19,6 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-
-
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -60,47 +58,50 @@ static void MX_USART2_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-int recv = 0;
-uint8_t recv_buf[2];
-
 #define BUFFER_SZ 255
 #define MAX_TEXT 10
-#define MAX_HELP_TEXT 40
 
-int  buf_pos;
+int buf_pos = 0;
 uint8_t buffer[BUFFER_SZ] = {0,};
+
+int recv = 0; /* to signal the main loop that we have incoming data from uart. */
+uint8_t recv_buf[2] = {0,};
+
+static void help(char **argv, int argc)
+{
+	char str[] = "Do you need help?";
+	output(&huart2, str);
+}
+
+static void run(char **argv, int argc)
+{
+	char str[] = "You want to run something!";
+	output(&huart2, str);
+}
+
 
 struct help_text {
 	char input[MAX_TEXT];
 	void (*func)(char **argv, int argc);
 };
 
-
-
-static void help(char **argv, int argc) {
-	char help_str[] = "You need help mate?!";
-	output(&huart2, help_str);
-}
-
-static void run(char **argv, int argc) {
-
-}
-
-struct help_text helper[] =  {
-	{.input = "help", .func = help },
-	{.input = "run",  .func = run  }
+struct help_text helper[] = {
+		{.input = "help", .func = help },
+		{.input = "run", .func = run }
 };
 int help_sz = sizeof(helper) / sizeof(helper[0]);
 
-static void check_text() {
+static void check_text()
+{
 	char **argv;
-	int argc;
+	int argc = 0;
 	int ret;
-	ret = get_args((char *)buffer, &argv, &argc);
+
+	ret = get_args((char*)buffer, &argv, &argc);
 	if(ret || argc < 1) goto end;
 
 	struct help_text *help_text = helper;
-	for(int i = 0 ; i < help_sz ; ++i) {
+	for(int i = 0; i < help_sz; ++i) {
 		if(0 == strcmp(argv[0], help_text->input)) {
 			help_text->func(argv, argc);
 			break;
@@ -108,6 +109,7 @@ static void check_text() {
 		++help_text;
 	}
 	buf_pos = 0;
+
 end:
 	free_args(argv, argc);
 }
@@ -117,8 +119,6 @@ end:
   * @brief  The application entry point.
   * @retval int
   */
-
-
 int main(void)
 {
   /* USER CODE BEGIN 1 */
@@ -150,12 +150,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-
-  recv = 0;
-  buf_pos = 0;
-
   HAL_UART_Receive_IT(&huart2, recv_buf, 1);
-
   while (1)
   {
 	  if(recv) {
@@ -173,7 +168,6 @@ int main(void)
 		  buffer[buf_pos++] = recv_buf[0];
 		  HAL_UART_Transmit(&huart2, recv_buf, 1, 500);
 	  }
-
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -272,6 +266,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	recv = 1;
 	HAL_UART_Receive_IT(&huart2, recv_buf, 1);
 }
+
 /* USER CODE END 4 */
 
 /**
